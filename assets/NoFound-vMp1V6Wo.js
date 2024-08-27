@@ -1,0 +1,1 @@
+import{j as e,k as t,o as n,c as s}from"./index-CHoBvRcG.js";const _={__name:"NoFound",setup(u){const o=e();return t(()=>{setTimeout(()=>{o.push("/")},3e3)}),(r,a)=>(n(),s("h1",null,"404 not found"))}};export{_ as default};
