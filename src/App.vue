@@ -3,7 +3,6 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  
   <RouterView />
 </template>
 
@@ -93,6 +92,13 @@ img {
 
 .logoImg {
   margin-bottom: 16px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
 }
 
 .vhContainer {

@@ -1,13 +1,51 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import axios from "axios";
 
 const ApiBase = "https://todolist-api.hexschool.io";
+
+const email = ref('');
+const nickname =ref('');
+const password =ref('');
+const passwordChecked =ref('');
+
+const emailError = ref('');
+const nicknameError =ref('');
+const passwordError = ref('');
+const passwordCheckedError =ref('');
+
 const SignUpData = ref({
-  email: "",
-  password: "",
-  nickname: ""
+  email: email,
+  password: password,
+  nickname: nickname,
+});
+
+watch([email, nickname, password, passwordChecked], ([newEmail, newNickname, newPassword, newPasswordChecked]) => {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(newEmail)) {
+    emailError.value = '需要正確的輸入 email 格式';
+  } else {
+    emailError.value = '';
+  }
+
+  if (!newNickname) {
+    nicknameError.value = '此欄位不可留空';
+  } else {
+    nicknameError.value = '';
+  }
+
+  if (newPassword.length < 6) {
+    passwordError.value = '密碼至少6個字';
+  } else {
+    passwordError.value = '';
+  }
+
+  if(newPasswordChecked != newPassword){
+    passwordCheckedError.value ='兩次輸入之密碼不相同';
+  } else{
+    passwordCheckedError.value ='';
+  }
 });
 const ID = ref('') //先有空值才能存取接收值，並使用在畫面上
 const FillError = ref('')
@@ -15,19 +53,17 @@ const FillError = ref('')
 async function SignUp(){
   try{
     const res = await axios.post(`${ApiBase}/users/sign_up`,SignUpData.value);
-    alert("註冊成功")
+      alert("註冊成功，請前往登入")
     ID.value = res.data.uid;
-
   }catch(error){
-    FillError.value =error.message;
+    FillError.value = error.response.data.message;
+    alert(FillError.value)
   }
-  
 }
 </script>
 
 <template>
 <div id="signUpPage" class="bg-yellow">
-  
   <div class="container signUpPage vhContainer">
     <div class="side">
       <a href="#"><img class="logoImg" src="https://raw.githubusercontent.com/hexschool/2022-web-layout-training/main/todolist/logo.png" alt=""></a>
@@ -36,18 +72,25 @@ async function SignUp(){
     <form class="formControls" action="index.html">
       <h2 class="formControls_txt">註冊帳號</h2>
       <label class="formControls_label" for="email">Email</label>
-      <input class="formControls_input" type="text" id="email" name="email" placeholder="請輸入 email" required v-model="SignUpData.email">
+      <input class="formControls_input" type="text" id="email" name="email" placeholder="請輸入 email" required v-model="email">
+      <span v-if="emailError">{{ emailError }}</span>
+
       <label class="formControls_label" for="name" >您的暱稱</label>
-      <input class="formControls_input" type="text" name="name" id="name" placeholder="請輸入您的暱稱" v-model="SignUpData.nickname">
+      <input class="formControls_input" type="text" name="name" id="name" placeholder="請輸入您的暱稱" v-model="nickname">
+      <span v-if="nicknameError">{{ nicknameError }}</span>
+
       <label class="formControls_label" for="pwd">密碼</label>
-      <input class="formControls_input" type="password" name="pwd" id="pwd" placeholder="請輸入密碼" required v-model="SignUpData.password">
+      <input class="formControls_input" type="password" name="pwd" id="pwd" placeholder="請輸入密碼" required v-model="password">
+      <span v-if="passwordError">{{ passwordError }}</span>
+
       <label class="formControls_label" for="pwd">再次輸入密碼</label>
-      <input class="formControls_input" type="password" name="pwdC" id="pwdC" placeholder="請再次輸入密碼" required v-model="SignUpData.passwordChecked">
+      <input class="formControls_input" type="password" name="pwdC" id="pwdC" placeholder="請再次輸入密碼" required v-model="passwordChecked">
+      <span v-if="passwordCheckedError">{{ passwordCheckedError }}</span>
+
       <input class="formControls_btnSubmit" type="button" @click="SignUp" value="註冊帳號">
       <RouterLink to="/" class="formControls_btnLink">登入</RouterLink>
     </form>
   </div>
-
 </div>
 </template>
 
@@ -203,6 +246,10 @@ async function SignUp(){
   border: 1px solid #9F9A91;
   border-radius: 5px;
   margin-right: 16px;
+}
+
+span{
+  margin: 0px 0px;
 }
 
 .todoList_list .todoList_items .todoList_input:checked ~ span {

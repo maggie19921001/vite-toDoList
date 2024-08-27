@@ -1,50 +1,53 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import { onMounted, ref } from "vue";
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { onMounted, ref, watch } from "vue";
 import axios from "axios";
 
+const router = useRouter();
 const ApiBase = "https://todolist-api.hexschool.io";
+const goTodo = ()=>{
+  router.push("/todo")
+}
+const email = ref('');
+const password =ref('');
+const emailError = ref('');
+
+watch([email], ([newEmail]) => {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(newEmail)) {
+    emailError.value = '需要正確的輸入 email 格式';
+  } else {
+    emailError.value = '';
+  }
+});
 
 //登入
 const LoginData = ref({
-  email: "",
-  password: "",
+  email: email,
+  password: password,
 });
 const Token = ref('')
-const FillError = ref('')
 
 const Login = async()=>{
   try{
     const res = await axios.post(`${ApiBase}/users/sign_in`,LoginData.value);
-    alert("登入成功")
-    Token.value = res.data.token;
+    if (confirm("登入成功") == true) {
+      Token.value = res.data.token;
+      const LimitDate = new Date(); 
+      // 設定當前日期 如8/10
+      LimitDate.setDate(LimitDate.getDate() + 1); //設定日期為>取得日10+1=8/11
+      document.cookie = `loginToken=${Token.value}; expires=${LimitDate.toUTCString()}`; 
+      //cookie值設定為輸入之token，取得日期後轉為時間字串格式設定為過期日
+      goTodo();
+       }else {
+      };
 
   }catch(error){
-    FillError.value =error.message;
+    alert(error.message);
   }
 }
 
-//驗證 
-const user = ref({
-  nickname:'',
-  uid:''
-})
-const checkError = ref('');
 
-const checkOut = async()=>{
-  const LimitDate = new Date(); //設定當前日期 如8/10
-  LimitDate.setDate(LimitDate.getDate() + 1); //設定日期為>取得日10+1=8/11
-  document.cookie = `loginToken=${Token.value}; expires=${LimitDate.toUTCString()}`; 
-  //cookie值設定為輸入之token，取得日期後轉為時間字串格式設定為過期日
-  try{
-    const res = await axios.get(`${ApiBase}/users/checkout`,{
-    headers:{Authorization:Token.value,}
-    });
-    user.value=res.data
-  }catch(error){
-    checkError.value =error.message;
-  }
-}
 </script>
 
 <template>
@@ -56,14 +59,16 @@ const checkOut = async()=>{
     </div>
     <form class="formControls" action="index.html">
       <h2 class="formControls_txt">最實用的線上代辦事項服務</h2>
+
       <label class="formControls_label" for="email">Email</label>
-      <input class="formControls_input" type="text" id="email" name="email" placeholder="請輸入 email" required v-model="LoginData.email">
-      <span>此欄位不可留空</span>
+      <input class="formControls_input" type="text" id="email" name="email" placeholder="請輸入 email" required v-model="email">
+      <span v-if="emailError">{{ emailError }}</span>
+
       <label class="formControls_label" for="pwd">密碼</label>
-      <input class="formControls_input" type="password" name="pwd" id="pwd" placeholder="請輸入密碼" required v-model="LoginData.password">
-      <input class="formControls_btnSubmit" type="button" onclick="Login:location.href='#todo'" value="登入">
+      <input class="formControls_input" type="password" name="pwd" id="pwd" placeholder="請輸入密碼" required v-model="password">
+      
+      <input class="formControls_btnSubmit" type="button" @click="Login" value="登入">
       <RouterLink to="/signup" class="formControls_btnLink">註冊帳號</RouterLink>
-      <RouterLink to="/todo" class="formControls_btnLink">ToDo</RouterLink>
     </form>
   </div>
 </div>
