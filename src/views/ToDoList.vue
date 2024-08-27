@@ -58,7 +58,11 @@ const logOut = async()=>{
         const res = await axios.post(`${ApiBase}/users/sign_out`,{},{
         headers:{Authorization:tokenCookie,}
         });
-        router.push("/login");
+        const LimitDate = new Date(); 
+      
+       LimitDate.setDate(LimitDate.getDate() - 1); 
+       document.cookie = `loginToken=${tokenCookie}; expires=${LimitDate.toUTCString()}`; 
+       router.push("/login");
     }catch(error){
         console.log(error.message);
     }

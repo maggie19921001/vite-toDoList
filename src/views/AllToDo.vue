@@ -86,9 +86,9 @@ const toggleStatus = async (id) => {
   getTodos();
 };
 
-//完成數量
-const completedTodo = computed(()=>{
-    return todos.value.filter(todo => todo.status).length;
+//未完成數量
+const UndoTodo = computed(()=>{
+    return todos.value.filter(todo => todo.status==false).length;
 })
 
 </script>
@@ -114,7 +114,7 @@ const completedTodo = computed(()=>{
         </li>
     </ul>
     <div class="todoList_statistics">
-        <p> {{ completedTodo }} 個已完成項目</p>
+        <p> {{ UndoTodo }} 個待完成項目</p>
     </div>
 </template>
 <style>
