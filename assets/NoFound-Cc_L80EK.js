@@ -1,0 +1,1 @@
+import{u as e,k as t,o as n,c as u}from"./index-8cJi8fwC.js";const _={__name:"NoFound",setup(s){const o=e();return t(()=>{setTimeout(()=>{o.push("/")},3e3)}),(r,a)=>(n(),u("h1",null,"404 not found"))}};export{_ as default};
