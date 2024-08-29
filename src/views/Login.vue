@@ -1,13 +1,11 @@
 <script setup>
 import { RouterLink, RouterView, useRouter } from 'vue-router'
-import { onMounted, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import axios from "axios";
 
 const router = useRouter();
-const ApiBase = "https://todolist-api.hexschool.io";
-const goTodo = ()=>{
-  router.push("/todo")
-}
+const apiBase = "https://todolist-api.hexschool.io";
+
 const email = ref('');
 const password =ref('');
 const emailError = ref('');
@@ -22,30 +20,32 @@ watch([email], ([newEmail]) => {
 });
 
 //登入
-const LoginData = ref({
+const loginData = ref({
   email: email,
   password: password,
 });
-const Token = ref('')
+const token = ref('')
 
-const Login = async()=>{
-  try{
-    const res = await axios.post(`${ApiBase}/users/sign_in`,LoginData.value);
+const login = async()=>{
+  if(emailError.value=='' && password.value.length>5){
+    try{
+    const res = await axios.post(`${apiBase}/users/sign_in`,loginData.value);
     if (confirm("登入成功") == true) {
-      Token.value = res.data.token;
+      token.value = res.data.token;
       const LimitDate = new Date(); 
       // 設定當前日期 如8/10
       LimitDate.setDate(LimitDate.getDate() + 1); //設定日期為>取得日10+1=8/11
-      document.cookie = `loginToken=${Token.value}; expires=${LimitDate.toUTCString()}`; 
+      document.cookie = `loginToken=${token.value}; expires=${LimitDate.toUTCString()}`; 
       //cookie值設定為輸入之token，取得日期後轉為時間字串格式設定為過期日
-      goTodo();
-       }else {
-      };
-
-  }catch(error){
-    alert(error.message);
+      router.push("/todo");
+       }
+    }catch(error){
+      alert(error.response.data.message);
+    }
+  }else{
+    alert('請填寫正確資訊')
   }
-}
+};
 
 
 </script>
@@ -67,7 +67,7 @@ const Login = async()=>{
       <label class="formControls_label" for="pwd">密碼</label>
       <input class="formControls_input" type="password" name="pwd" id="pwd" placeholder="請輸入密碼" required v-model="password">
       
-      <input class="formControls_btnSubmit" type="button" @click="Login" value="登入">
+      <input class="formControls_btnSubmit" type="button" @click="login" value="登入">
       <RouterLink to="/signup" class="formControls_btnLink">註冊帳號</RouterLink>
     </form>
   </div>

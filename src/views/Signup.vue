@@ -1,9 +1,10 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { ref, watch } from "vue";
 import axios from "axios";
 
-const ApiBase = "https://todolist-api.hexschool.io";
+const router = useRouter();
+const apiBase = "https://todolist-api.hexschool.io";
 
 const email = ref('');
 const nickname =ref('');
@@ -15,7 +16,7 @@ const nicknameError =ref('');
 const passwordError = ref('');
 const passwordCheckedError =ref('');
 
-const SignUpData = ref({
+const signUpData = ref({
   email: email,
   password: password,
   nickname: nickname,
@@ -47,17 +48,20 @@ watch([email, nickname, password, passwordChecked], ([newEmail, newNickname, new
     passwordCheckedError.value ='';
   }
 });
-const ID = ref('') //先有空值才能存取接收值，並使用在畫面上
-const FillError = ref('')
-
-async function SignUp(){
-  try{
-    const res = await axios.post(`${ApiBase}/users/sign_up`,SignUpData.value);
-      alert("註冊成功，請前往登入")
-    ID.value = res.data.uid;
+// const ID = ref('') //先有空值才能存取接收值，並使用在畫面上
+const signUp = async()=>{
+  if(emailError.value==''&& nicknameError.value==''&&passwordError==''&& passwordCheckedError==''){
+    try{
+    const res = await axios.post(`${apiBase}/users/sign_up`,signUpData.value);
+      if(confirm("註冊成功")==true){
+        router.push("/")
+      }
+      // ID.value = res.data.uid;
   }catch(error){
-    FillError.value = error.response.data.message;
-    alert(FillError.value)
+    alert(error.response.data.message);
+  }
+  }else{
+    alert('請填寫正確資訊')
   }
 }
 </script>
@@ -87,7 +91,7 @@ async function SignUp(){
       <input class="formControls_input" type="password" name="pwdC" id="pwdC" placeholder="請再次輸入密碼" required v-model="passwordChecked">
       <span v-if="passwordCheckedError">{{ passwordCheckedError }}</span>
 
-      <input class="formControls_btnSubmit" type="button" @click="SignUp" value="註冊帳號">
+      <input class="formControls_btnSubmit" type="button" @click="signUp" value="註冊帳號">
       <RouterLink to="/" class="formControls_btnLink">登入</RouterLink>
     </form>
   </div>

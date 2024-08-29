@@ -1,8 +1,10 @@
 <script setup>
-import { ref,onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
-const ApiBase = "https://todolist-api.hexschool.io";
-import { RouterView, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const apiBase = "https://todolist-api.hexschool.io";
 
 // 從cookie中提取token (cookie原始值是物件)
 const getTokenFromCookie = () => {
@@ -32,7 +34,7 @@ const checkError = ref('');
 
 const checkOut = async()=>{
   try{
-    const res = await axios.get(`${ApiBase}/users/checkout`,{
+    const res = await axios.get(`${apiBase}/users/checkout`,{
     headers:{Authorization:tokenCookie,}
     });
     user.value=res.data
@@ -51,18 +53,17 @@ const checkOut = async()=>{
 //按下確定後原始值更新，剩下編輯按鈕
 
 //登出 
-const router = useRouter(); // 引入 useRouter Hook
 //[?]因登出不需提供資料，所以第二個{}為空 (但不確定為何不能省略)
 const logOut = async()=>{
     try{
-        const res = await axios.post(`${ApiBase}/users/sign_out`,{},{
+        const res = await axios.post(`${apiBase}/users/sign_out`,{},{
         headers:{Authorization:tokenCookie,}
         });
         const LimitDate = new Date(); 
       
        LimitDate.setDate(LimitDate.getDate() - 1); 
        document.cookie = `loginToken=${tokenCookie}; expires=${LimitDate.toUTCString()}`; 
-       router.push("/login");
+       router.push("/");
     }catch(error){
         console.log(error.message);
     }
@@ -71,39 +72,120 @@ const logOut = async()=>{
 const todos =ref([]);//API回傳陣列
 const todo = {content:'',}//API傳輸值
 const todoText =ref('');//輸入值
+const editText =ref('');
+const loading = ref(false);
+
 // 取得所有待辦
 const getTodos = async()=>{
-    const res = await axios.get(`${ApiBase}/todos`,{
+  try{
+    loading.value = true;
+    const res = await axios.get(`${apiBase}/todos`,{
     headers:{Authorization:tokenCookie,}
     });
-    console.log(res.data);
     todos.value=res.data.data;
+    setTimeout(()=>{
+      loading.value = false;
+    },500)
+  }catch(error){
+    
+  }
 }
 
 // 新增 先取得content再發送post，最後還原空格
-const todoAdd = async()=>{
-    if(todoText != undefined){
-        todo.content = todoText.value
-    }
-    await axios.post(`${ApiBase}/todos`,todo,{
+const addTodo = async()=>{
+    if(todoText.value != undefined && todoText.value!=''){
+        todo.content = todoText.value;
+        try{
+          await axios.post(`${apiBase}/todos`,todo,{
         headers:{Authorization:tokenCookie,}
-    })
-    todoText.value='';
-    // 重新加載當前路由，觸發 RouterView 重新渲染
-    router.replace({ path: router.currentRoute.value.path });
+        })
+        todoText.value='';
+        getTodos();
+        }catch(error){
+
+        }
+    }else{
+      alert('需填入內容')
+    }
 }
 
+//編輯
+const changeText = (event,id) => {
+    editText.value = {
+    ...editText.value,
+    [id]: event.target.value,
+  };
+};
+const editTodo = (id)=> {
+    // 找到對應的 todo 項目，切換 isEditing 狀態
+    const todo = todos.value.find((todo) => todo.id === id);
+    if (todo) {
+        todo.isEditing = !todo.isEditing;//將原先false轉為true
+        editText.value[id] = todo.content;
+    }
+}
+const comfirmEdit = async(id)=>{
+    const todo = todos.value.find((todo) => todo.id === id);
+    todo.content = editText.value[id];
+    try{
+      await axios.put(`${apiBase}/todos/${id}`,todo, {
+        headers: {Authorization: tokenCookie,},
+    });
+    }catch(error){
+
+    }
+    todo.isEditing = false; // 隱藏編輯框
+    getTodos();
+     editText.value = {
+    ...editText.value,
+    [id]: '',
+}
+}
+//刪除
+const deleteTodo = async(id)=>{
+    if (confirm("確定要刪除嗎？") == true) {
+      try{
+        await axios.delete(`${apiBase}/todos/${id}`, {
+        headers: {Authorization:tokenCookie,},
+        });
+        getTodos();
+      }catch(error){
+
+      }
+    }else {
+  };
+}
+//完成狀態
+const toggleStatus = async (id) => {
+  try{
+    await axios.patch(
+    `${apiBase}/todos/${id}/toggle`,
+    {},
+    {headers: { Authorization: tokenCookie,},}
+  );
+  getTodos();
+  }catch(error){
+
+  }
+};
+
+
 // //tab class切換
-// const tabID = ref('all');
-// const changeTab = ((id)=>{
-//   tabID.value = id;
-// })
+const tabID = ref('all');
+const changeTab = ((id)=>{
+  tabID.value = id;
+})
 
 onMounted(()=>{
   if(tokenCookie){
     checkOut()
     getTodos()
   }
+})
+
+//未完成數量
+const undoTodo = computed(()=>{
+    return todos.value.filter(todo => todo.status==false).length;
 })
 </script>
 
@@ -120,16 +202,72 @@ onMounted(()=>{
       <div class="todoList_Content">
         <div class="inputBox">
             <input type="text" placeholder="請輸入待辦事項" v-model="todoText">
-            <button  @click="todoAdd" class="fa fa-plus">＋</button>
+            <button  @click="addTodo" class="fa fa-plus">＋</button>
         </div>
         <div class="todoList_list">
             <ul class="todoList_tab">  
-              <li><RouterLink to="/todo" exact-active-class="active">全部</RouterLink></li>
-              <li><RouterLink to="/todo/undone" exact-active-class="active">未完成</RouterLink></li>
-              <li><RouterLink to="/todo/completed" exact-active-class="active">已完成</RouterLink></li>
+              <li ><a @click="changeTab('all')" :class="{'active': tabID=='all'}">全部</a></li>
+              <li><a @click="changeTab('unDone')" :class="{'active': tabID=='unDone'}">未完成</a></li>
+              <li><a @click="changeTab('completed')" :class="{'active': tabID=='completed'}">已完成</a></li>
             </ul>
             <div class="todoList_items">
-              <RouterView/>
+              <div v-if="todos.length === 0" class="no-item">目前尚無待辦事項</div>
+              <div v-else-if="loading==true" class="no-item">Loading...</div>
+              <ul v-else class="todoList_item">
+                <li v-for="(todo , index) in todos" :key="index">
+                  <template v-if="tabID == 'all'">
+                  <label class="todoList_label">
+                    <div class="items">
+                      <input class="todoList_input" type="checkbox" v-model="todo.status" @click="toggleStatus(todo.id)">
+                      {{ todo.content }} 
+                    </div>
+                    <div class="edit-block">
+                      <div class="btns" v-if="todo.isEditing">
+                      <input type="text" v-model="editText[todo.id]" @change="changeText($event, todo.id)">
+                      <button type="button" class="edit-btn" @click="comfirmEdit(todo.id)"><span class="material-icons">done</span></button>
+                      </div>
+                      <button type="button" class="edit-btn" @click="editTodo(todo.id)"><span class="material-icons">edit</span></button>
+                      <button type="button" class="edit-btn" @click="deleteTodo(todo.id)"><span class="material-icons">delete</span></button>
+                    </div> 
+                  </label>
+                  </template>
+                  <template v-if="tabID == 'unDone' && todo.status=== false">
+                  <label class="todoList_label">
+                    <div class="items">
+                      <input class="todoList_input" type="checkbox" v-model="todo.status" @click="toggleStatus(todo.id)">
+                      {{ todo.content }} 
+                    </div>
+                    <div class="edit-block">
+                      <div class="btns" v-if="todo.isEditing">
+                      <input type="text" v-model="editText[todo.id]" @change="changeText($event, todo.id)">
+                      <button type="button" class="edit-btn" @click="comfirmEdit(todo.id)"><span class="material-icons">done</span></button>
+                      </div>
+                      <button type="button" class="edit-btn" @click="editTodo(todo.id)"><span class="material-icons">edit</span></button>
+                      <button type="button" class="edit-btn" @click="deleteTodo(todo.id)"><span class="material-icons">delete</span></button>
+                    </div> 
+                  </label>
+                  </template>
+                  <template v-if="tabID == 'completed' && todo.status=== true">
+                  <label class="todoList_label">
+                    <div class="items">
+                      <input class="todoList_input" type="checkbox" v-model="todo.status" @click="toggleStatus(todo.id)">
+                      {{ todo.content }} 
+                    </div>
+                    <div class="edit-block">
+                      <div class="btns" v-if="todo.isEditing">
+                      <input type="text" v-model="editText[todo.id]" @change="changeText($event, todo.id)">
+                      <button type="button" class="edit-btn" @click="comfirmEdit(todo.id)"><span class="material-icons">done</span></button>
+                      </div>
+                      <button type="button" class="edit-btn" @click="editTodo(todo.id)"><span class="material-icons">edit</span></button>
+                      <button type="button" class="edit-btn" @click="deleteTodo(todo.id)"><span class="material-icons">delete</span></button>
+                    </div> 
+                  </label>
+                  </template>
+                </li>
+              </ul>
+              <div class="todoList_statistics">
+                  <p> {{ undoTodo }} 個待完成項目</p>
+              </div>
             </div>
         </div>
       </div>
@@ -320,5 +458,24 @@ onMounted(()=>{
   color: #9F9A91;
   font-size: 0.875rem;
   text-decoration: none;
+}
+
+.no-item{
+  color: #333333;
+  font-size: 1rem;
+  margin: 50px 0px;
+  text-align: center;
+}
+.edit-block,.btns{
+  display: flex;
+  gap: 10px;
+}
+.edit-btn{
+  border: none;
+  color: #bf9124;
+  background-color: #fff;
+}
+.edit-btn:hover{
+ color: #333333;
 }
 </style>

@@ -21,23 +21,6 @@ const router = createRouter({
       path: '/todo',
       name: 'TodoList',
       component: () => import('../views/ToDoList.vue'),
-      children:[
-        {
-          path: '',
-          name: 'AllToDo',
-          component: () => import('../views/AllToDo.vue')
-        },
-        {
-          path: 'undone',
-          name: 'UnDone',
-          component: () => import('../views/UnDone.vue')
-        },
-        {
-          path: 'completed',
-          name: 'Completed',
-          component: () => import('../views/Completed.vue')
-        }
-      ]
     },
     {
       path: '/:pathMatch(.*)*',
