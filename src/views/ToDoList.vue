@@ -110,12 +110,6 @@ const addTodo = async()=>{
 }
 
 //編輯
-const changeText = (event,id) => {
-    editText.value = {
-    ...editText.value,
-    [id]: event.target.value,
-  };
-};
 const editTodo = (id)=> {
     // 找到對應的 todo 項目，切換 isEditing 狀態
     const todo = todos.value.find((todo) => todo.id === id);
@@ -124,6 +118,14 @@ const editTodo = (id)=> {
         editText.value[id] = todo.content;
     }
 }
+
+const changeText = (event,id) => {
+    editText.value = {
+    ...editText.value,
+    [id]: event.target.value,
+  };
+};
+
 const comfirmEdit = async(id)=>{
     const todo = todos.value.find((todo) => todo.id === id);
     todo.content = editText.value[id];

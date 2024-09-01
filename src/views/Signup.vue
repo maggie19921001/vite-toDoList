@@ -48,15 +48,15 @@ watch([email, nickname, password, passwordChecked], ([newEmail, newNickname, new
     passwordCheckedError.value ='';
   }
 });
-// const ID = ref('') //先有空值才能存取接收值，並使用在畫面上
+const ID = ref('') //先有空值才能存取接收值，並使用在畫面上
 const signUp = async()=>{
-  if(emailError.value==''&& nicknameError.value==''&&passwordError==''&& passwordCheckedError==''){
+  if(emailError.value==''&& nicknameError.value==''&& passwordError.value==''&& passwordCheckedError.value==''){
     try{
     const res = await axios.post(`${apiBase}/users/sign_up`,signUpData.value);
       if(confirm("註冊成功")==true){
         router.push("/")
       }
-      // ID.value = res.data.uid;
+      ID.value = res.data.uid;
   }catch(error){
     alert(error.response.data.message);
   }
